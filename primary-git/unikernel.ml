@@ -129,24 +129,25 @@ module Main (R : RANDOM) (P : PCLOCK) (M : MCLOCK) (T : TIME) (S : STACKV4) (RES
     | Ok trie ->
       let on_update ~old t = store_zones ~old t store upstream in
       let on_notify n t =
-        (match n with
+        match n with
         | `Notify soa ->
-          Logs.err (fun m -> m "ignoring normal notify %a" Fmt.(option ~none:(unit "no soa") Udns.Soa.pp) soa)
+          Logs.err (fun m -> m "ignoring normal notify %a" Fmt.(option ~none:(unit "no soa") Udns.Soa.pp) soa);
+          Lwt.return None
         | `Signed_notify soa ->
-          Logs.info (fun m -> m "got notified, checking out %a" Fmt.(option ~none:(unit "no soa") Udns.Soa.pp) soa));
-        load_git store upstream >|= function
-        | Error msg ->
-          Logs.err (fun m -> m "error while loading git while in notify, continuing with old data");
-          None
-        | Ok trie ->
-          Logs.info (fun m -> m "loaded a new trie from git!");
-          Some trie
-    in
-    let t =
-      Udns_server.Primary.create ~keys ~a:[Udns_server.Authentication.tsig_auth]
-        ~tsig_verify:Udns_tsig.verify ~tsig_sign:Udns_tsig.sign
-        ~rng:R.generate trie
-    in
-    D.primary ~on_update ~on_notify s t ;
-    S.listen s
+          Logs.info (fun m -> m "got notified, checking out %a" Fmt.(option ~none:(unit "no soa") Udns.Soa.pp) soa);
+          load_git store upstream >|= function
+          | Error msg ->
+            Logs.err (fun m -> m "error while loading git while in notify, continuing with old data");
+            None
+          | Ok trie ->
+            Logs.info (fun m -> m "loaded a new trie from git!");
+            Some trie
+      in
+      let t =
+        Udns_server.Primary.create ~keys ~a:[Udns_server.Authentication.tsig_auth]
+          ~tsig_verify:Udns_tsig.verify ~tsig_sign:Udns_tsig.sign
+          ~rng:R.generate trie
+      in
+      D.primary ~on_update ~on_notify s t ;
+      S.listen s
 end
