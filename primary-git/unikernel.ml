@@ -108,7 +108,12 @@ module Main (R : RANDOM) (P : PCLOCK) (M : MCLOCK) (T : TIME) (S : STACKV4) (RES
 
   module D = Udns_mirage_server.Make(P)(M)(T)(S)
 
-  let start _rng _pclock _mclock _time s resolver conduit _ =
+  let start _rng _pclock _mclock _time s resolver conduit _ _ info =
+    Logs.info (fun m -> m "used packages: %a"
+                  Fmt.(Dump.list @@ pair ~sep:(unit ".") string string)
+                  info.Mirage_info.packages) ;
+    Logs.info (fun m -> m "used libraries: %a"
+                  Fmt.(Dump.list string) info.Mirage_info.libraries) ;
     let keys = List.fold_left (fun acc str ->
         match Udns.Dnskey.name_key_of_string str with
         | Error (`Msg msg) -> Logs.err (fun m -> m "key parse error: %s" msg) ; acc
