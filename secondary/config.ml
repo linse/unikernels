@@ -4,7 +4,7 @@ open Mirage
 
 let net = generic_stackv4 default_network
 
-let logger = syslog_udp ~config:(syslog_config "sn.nqsb.io") net
+let logger = syslog_udp ~config:(syslog_config "ns1.robur.io") net
 
 let keys =
   let doc = Key.Arg.info ~doc:"nsupdate keys (name:type:value,...)" ["keys"] in
@@ -31,4 +31,4 @@ let dns_handler =
     "Unikernel.Main" (random @-> pclock @-> mclock @-> time @-> stackv4 @-> job)
 
 let () =
-  register "snnqsb" [dns_handler $ default_random $ default_posix_clock $ default_monotonic_clock $ default_time $ generic_stackv4 default_network ]
+  register "ns1robur" [dns_handler $ default_random $ default_posix_clock $ default_monotonic_clock $ default_time $ generic_stackv4 default_network ]
