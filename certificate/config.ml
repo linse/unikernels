@@ -46,7 +46,7 @@ let packages =
     package "duration" ;
     package "randomconv" ;
     package "logs" ;
-    package ~pin "udns";
+    package ~pin:"git+https://github.com/hannesm/mirage-tcpip.git#lru.0.3.0" "tcpip"; package ~pin "udns";
     package ~pin "udns-tsig";
     package ~pin "udns-certify";
     package ~pin "udns-mirage";

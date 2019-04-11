@@ -11,7 +11,7 @@ let dns_handler =
     let pin = "git+https://github.com/roburio/udns.git" in
     [
       package "logs" ;
-      package ~pin "udns";
+      package ~pin:"git+https://github.com/hannesm/mirage-tcpip.git#lru.0.3.0" "tcpip"; package ~pin "udns";
       package ~pin "udns-mirage";
       package ~pin "udns-resolver";
       package ~pin "udns-server";
