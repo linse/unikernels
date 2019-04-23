@@ -7,8 +7,11 @@ module Main (DB : Qubes.S.DB) (Time : Mirage_time_lwt.S) = struct
 
   let handler ~user cmdline flow =
     Logs.info (fun f -> f "received qrexec message: user %s, message %s" user cmdline);
-    (* TODO: output stuff *)
-    Lwt.return 0
+    Qubes.RExec.Flow.read_line flow >>= function
+    | `Eof -> Lwt.return 1
+    | `Ok input ->
+      Logs.info (fun f -> f "You wrote %S. Bye." input);
+      Lwt.return 0
 
   let start _db _time =
     Qubes.RExec.connect ~domid:0 () >>= fun qrexec ->
