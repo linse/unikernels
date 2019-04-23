@@ -2,8 +2,8 @@ open Lwt.Infix
 
 module Main (DB : Qubes.S.DB) (Time : Mirage_time_lwt.S) = struct
   let service_name = "yomimono.updateFirewall"
-  let target_domain = "0"
-  let request_id = "fwbounce"
+  let target_domain = "dom0"
+  let request_id = "1"
 
   let handler ~user cmdline flow =
     Logs.info (fun f -> f "received qrexec message: user %s, message %s" user cmdline);
