@@ -1,33 +1,22 @@
 open Lwt.Infix
 
 module Main (DB : Qubes.S.DB) (Time : Mirage_time_lwt.S) = struct
-  let please_change_fw = Cstruct.of_string "yomimono.updateFirewall"
+  let service_name = "yomimono.updateFirewall"
+  let target_domain = "0"
+  let request_id = "fwbounce"
 
-  let send_trigger_service ~target_domain ~service_name ~ident =
-    let tsp = Cstruct.create Qubes.Formats.Qrexec.sizeof_trigger_service_params in
-    Cstruct.blit service_name 0 tsp 0 (min (Cstruct.len service_name) 64);
-    Cstruct.blit target_domain 0 tsp 64 (min (Cstruct.len target_domain) 32);
-    (* TODO: we should make sure ident is unique and track correct
-       handlers for specific idents (for the case where multiple
-       requests have been made from one user of the library,
-       which may have different handlers); for now make the user track it,
-       and have them be responsible for demultiplexing via the `handler` API *)
-    Cstruct.blit ident 0 tsp 96 (min (Cstruct.len ident) 32);
-    tsp
-
-  let handler ~user str _flow =
-    Logs.info (fun f -> f "received qrexec message: user %s, message %s" user str);
+  let handler ~user cmdline flow =
+    Logs.info (fun f -> f "received qrexec message: user %s, message %s" user cmdline);
+    (* TODO: output stuff *)
     Lwt.return 0
 
   let start _db _time =
     Qubes.RExec.connect ~domid:0 () >>= fun qrexec ->
-    let msg = send_trigger_service ~target_domain:(Cstruct.of_string "dom0") ~service_name:please_change_fw ~ident:(Cstruct.of_string "0") in
-    Lwt.async (fun () ->
-      Qubes.RExec.listen qrexec handler
-    );
-    Qubes.RExec.send qrexec ~ty:`Trigger_service msg >|= (function
-    | `Ok () -> Logs.info (fun f -> f "successfully ran qrexec request");
-    | `Eof -> Logs.err (fun f -> f "couldn't run qrexec request: EOF on channel; it's already closed?")) >>= fun () ->
-    Time.sleep_ns 10_000_000_000L >>= fun () -> Lwt.return_unit
-
+    (* `connect` exchanges HELLOs,
+       so we're ready to send our MSG_TRIGGER_SERVICE message *)
+    Qubes.RExec.request_service qrexec ~target_domain ~service_name ~request_id handler >|= function
+    | Error (`Msg s) -> Logs.err (fun f -> f "unknown error: %s" s)
+    | Error `Permission_denied -> Logs.err (fun f -> f "Permission denied for service %s" service_name)
+    | Error `Closed -> Logs.err (fun f -> f "tried to write to a closed qrexec channel")
+    | Ok () -> Logs.info (fun f -> f "successfully ran qrexec request")
 end
